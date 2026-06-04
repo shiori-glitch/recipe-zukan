@@ -7,22 +7,25 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="レシピ図鑑">
 <title>レシピ図鑑</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
   :root {
-    --cream: #faf6f0;
-    --cream-dark: #f0e9de;
-    --ink: #1a1410;
-    --ink-light: #5c4f42;
-    --ink-faint: #a89880;
-    --vermillion: #c0392b;
-    --vermillion-light: #e74c3c;
-    --vermillion-pale: #fdecea;
-    --gold: #b8860b;
-    --sage: #6b7c5c;
-    --paper: #fff9f2;
-    --border: #d4c4b0;
-    --shadow: rgba(26,20,16,0.08);
+    --cream: #ffffff;
+    --cream-dark: #f4f4f4;
+    --ink: #111111;
+    --ink-light: #444444;
+    --ink-faint: #999999;
+    --accent: #c9a84c;
+    --accent-light: #f5ecd0;
+    --accent-dark: #a07a28;
+    --vermillion: #c9a84c;
+    --vermillion-light: #d4b86a;
+    --vermillion-pale: #fdf8ec;
+    --gold: #c9a84c;
+    --sage: #555555;
+    --paper: #ffffff;
+    --border: #e8e8e8;
+    --shadow: rgba(0,0,0,0.06);
     --nav-height: 64px;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -30,7 +33,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   body {
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     background: var(--cream);
     color: var(--ink);
     min-height: 100vh;
@@ -67,11 +70,11 @@
     justify-content: center; gap: 3px;
     background: none; border: none; cursor: pointer;
     color: var(--ink-faint); transition: color 0.2s;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 10px; font-weight: 500;
     padding-top: 8px;
   }
-  .nav-btn.active { color: var(--vermillion); }
+  .nav-btn.active { color: var(--accent); }
   .nav-btn svg { width: 22px; height: 22px; }
 
   /* ===== HEADERS ===== */
@@ -83,27 +86,27 @@
     display: flex; align-items: center; justify-content: space-between;
   }
   .screen-title {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 20px; font-weight: 700;
-    color: var(--ink); letter-spacing: 0.05em;
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px; font-weight: 400;
+    color: var(--ink); letter-spacing: 0.01em;
   }
   .screen-subtitle { font-size: 11px; color: var(--ink-faint); margin-top: 1px; }
 
   /* ===== BUTTONS ===== */
   .btn-primary {
-    background: var(--vermillion); color: white;
+    background: var(--ink); color: white;
     border: none; border-radius: 10px; padding: 12px 20px;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 15px; font-weight: 500; cursor: pointer;
     transition: background 0.15s, transform 0.1s;
     letter-spacing: 0.03em;
   }
-  .btn-primary:active { background: #a93226; transform: scale(0.98); }
+  .btn-primary:active { background: #333; transform: scale(0.98); }
 
   .btn-secondary {
     background: white; color: var(--ink);
     border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 18px;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 14px; font-weight: 500; cursor: pointer;
     transition: background 0.15s;
   }
@@ -113,66 +116,68 @@
     background: none; border: none; cursor: pointer;
     color: var(--ink-light); padding: 6px;
     display: flex; align-items: center; gap: 4px;
-    font-size: 14px; font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
   }
 
   .fab {
     position: fixed; bottom: calc(var(--nav-height) + var(--safe-bottom) + 20px);
     right: 20px; width: 56px; height: 56px;
-    background: var(--vermillion); color: white;
+    background: var(--ink); color: white;
     border: none; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 16px rgba(192,57,43,0.4);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     z-index: 90; transition: transform 0.15s, box-shadow 0.15s;
     font-size: 28px; line-height: 1;
   }
-  .fab:active { transform: scale(0.93); box-shadow: 0 2px 8px rgba(192,57,43,0.3); }
+  .fab:active { transform: scale(0.93); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
   /* ===== HOME SCREEN ===== */
   .home-content { padding: 20px; display: flex; flex-direction: column; gap: 24px; }
 
   .random-card {
-    background: var(--ink);
-    border-radius: 16px; padding: 24px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border-radius: 20px; padding: 28px;
     color: white; position: relative; overflow: hidden;
     cursor: pointer;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
   }
   .random-card::before {
     content: '';
-    position: absolute; top: -30px; right: -30px;
-    width: 120px; height: 120px;
-    background: var(--vermillion); border-radius: 50%;
-    opacity: 0.15;
+    position: absolute; top: -50px; right: -50px;
+    width: 200px; height: 200px;
+    background: var(--accent); border-radius: 50%;
+    opacity: 0.28;
   }
   .random-card::after {
     content: '';
-    position: absolute; bottom: -20px; left: 20px;
-    width: 80px; height: 80px;
-    background: var(--gold); border-radius: 50%;
-    opacity: 0.1;
+    position: absolute; bottom: -40px; left: 10px;
+    width: 140px; height: 140px;
+    background: var(--accent); border-radius: 50%;
+    opacity: 0.14;
   }
   .random-label {
-    font-size: 11px; letter-spacing: 0.15em;
-    color: rgba(255,255,255,0.5); margin-bottom: 8px;
-    text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.18em;
+    color: var(--accent); margin-bottom: 10px;
+    text-transform: uppercase; font-weight: 500;
   }
   .random-name {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 26px; font-weight: 700;
-    line-height: 1.3; margin-bottom: 16px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 30px; font-weight: 400;
+    line-height: 1.3; margin-bottom: 22px;
     position: relative; z-index: 1;
+    color: white;
   }
   .random-actions { display: flex; gap: 10px; position: relative; z-index: 1; }
   .random-btn {
-    background: rgba(255,255,255,0.15); color: white;
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 8px; padding: 8px 14px;
+    background: rgba(201,168,76,0.18); color: white;
+    border: 1px solid rgba(201,168,76,0.45);
+    border-radius: 8px; padding: 8px 16px;
     font-size: 13px; cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     transition: background 0.15s;
     display: flex; align-items: center; gap: 5px;
   }
-  .random-btn:active { background: rgba(255,255,255,0.25); }
+  .random-btn:active { background: rgba(201,168,76,0.32); }
 
   .section-label {
     font-size: 11px; letter-spacing: 0.12em;
@@ -182,16 +187,16 @@
 
   .recent-list { display: flex; flex-direction: column; gap: 8px; }
   .recent-item {
-    background: white; border-radius: 12px;
-    padding: 14px 16px;
+    background: white; border-radius: 14px;
+    padding: 16px 18px;
     border: 1.5px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
     cursor: pointer; transition: border-color 0.15s;
   }
-  .recent-item:active { border-color: var(--vermillion); background: var(--vermillion-pale); }
+  .recent-item:active { border-color: var(--accent); background: var(--accent-light); }
   .recent-item-name {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 16px; font-weight: 600; color: var(--ink);
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px; font-weight: 400; color: var(--ink);
   }
   .recent-item-date { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
   .recent-item-arrow { color: var(--border); }
@@ -210,13 +215,13 @@
     width: 100%; padding: 11px 16px 11px 40px;
     border: 1.5px solid var(--border); border-radius: 10px;
     background: white; font-size: 15px; color: var(--ink);
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     outline: none; appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a89880' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: 12px center;
   }
-  .search-bar:focus { border-color: var(--vermillion); }
+  .search-bar:focus { border-color: var(--accent); }
 
   .tag-filter-wrap {
     padding: 8px 16px; display: flex; gap: 8px;
@@ -228,12 +233,12 @@
     border-radius: 20px; font-size: 12px;
     border: 1.5px solid var(--border); background: white;
     cursor: pointer; transition: all 0.15s;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     color: var(--ink-light);
   }
   .tag-chip.active {
-    background: var(--vermillion); color: white;
-    border-color: var(--vermillion);
+    background: var(--ink); color: white;
+    border-color: var(--ink);
   }
 
   .recipe-list { padding: 8px 16px; display: flex; flex-direction: column; gap: 10px; }
@@ -243,14 +248,14 @@
     padding: 16px; cursor: pointer;
     transition: border-color 0.15s, transform 0.1s;
   }
-  .recipe-card:active { border-color: var(--vermillion); transform: scale(0.99); }
+  .recipe-card:active { border-color: var(--accent); transform: scale(0.99); }
   .recipe-card-name {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 18px; font-weight: 600; margin-bottom: 8px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px; font-weight: 400; margin-bottom: 8px;
   }
   .recipe-card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
   .tag-badge {
-    background: var(--cream-dark); color: var(--ink-light);
+    background: var(--accent-light); color: var(--accent-dark);
     padding: 3px 9px; border-radius: 20px; font-size: 11px;
     font-weight: 500;
   }
@@ -259,8 +264,8 @@
   /* ===== RECIPE DETAIL ===== */
   .detail-content { padding: 24px 20px; display: flex; flex-direction: column; gap: 24px; }
   .detail-name {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 28px; font-weight: 700; line-height: 1.3;
+    font-family: 'DM Serif Display', serif;
+    font-size: 30px; font-weight: 400; line-height: 1.3;
     color: var(--ink);
   }
   .detail-date { font-size: 13px; color: var(--ink-faint); margin-top: 6px; }
@@ -292,7 +297,7 @@
   .step-row { display: flex; gap: 12px; align-items: flex-start; }
   .step-num {
     min-width: 26px; height: 26px;
-    background: var(--vermillion); color: white;
+    background: var(--accent); color: white;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 700; flex-shrink: 0;
   }
@@ -313,19 +318,19 @@
   }
   .history-dot {
     width: 8px; height: 8px; border-radius: 50%;
-    background: var(--sage); flex-shrink: 0;
+    background: var(--accent); flex-shrink: 0;
   }
 
   .cooked-btn {
-    background: var(--sage); color: white;
-    border: none; border-radius: 12px; padding: 16px;
+    background: var(--accent); color: white;
+    border: none; border-radius: 14px; padding: 18px;
     font-size: 16px; font-weight: 500; cursor: pointer;
     width: 100%; text-align: center;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     transition: background 0.15s, transform 0.1s;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
   }
-  .cooked-btn:active { background: #5a6b4c; transform: scale(0.98); }
+  .cooked-btn:active { background: var(--accent-dark); transform: scale(0.98); }
 
   .detail-actions { display: flex; gap: 10px; }
 
@@ -336,16 +341,16 @@
     font-size: 12px; font-weight: 500; color: var(--ink-light);
     letter-spacing: 0.08em;
   }
-  .form-required { color: var(--vermillion); margin-left: 3px; }
+  .form-required { color: var(--accent); margin-left: 3px; }
   .form-input, .form-textarea {
     width: 100%; padding: 12px 14px;
     border: 1.5px solid var(--border); border-radius: 10px;
     font-size: 16px; color: var(--ink); background: white;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     outline: none; appearance: none;
     transition: border-color 0.15s;
   }
-  .form-input:focus, .form-textarea:focus { border-color: var(--vermillion); }
+  .form-input:focus, .form-textarea:focus { border-color: var(--accent); }
   .form-textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
 
   .tag-input-wrap {
@@ -354,9 +359,9 @@
     border-radius: 10px; background: white; min-height: 48px;
     cursor: text;
   }
-  .tag-input-wrap:focus-within { border-color: var(--vermillion); }
+  .tag-input-wrap:focus-within { border-color: var(--accent); }
   .tag-input-item {
-    background: var(--cream-dark); color: var(--ink);
+    background: var(--accent-light); color: var(--accent-dark);
     padding: 4px 10px 4px 10px; border-radius: 20px;
     font-size: 13px; display: flex; align-items: center; gap: 5px;
   }
@@ -367,7 +372,7 @@
   }
   .tag-input-field {
     border: none; outline: none; font-size: 15px;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     min-width: 80px; flex: 1; background: transparent;
     color: var(--ink);
   }
@@ -386,10 +391,10 @@
     border-radius: 8px; padding: 10px;
     color: var(--ink-faint); font-size: 13px;
     cursor: pointer; width: 100%; text-align: center;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     transition: border-color 0.15s, color 0.15s;
   }
-  .add-row-btn:active { border-color: var(--vermillion); color: var(--vermillion); }
+  .add-row-btn:active { border-color: var(--accent); color: var(--accent); }
 
   .step-rows { display: flex; flex-direction: column; gap: 8px; }
   .step-input-row { display: flex; gap: 8px; align-items: flex-start; }
@@ -402,10 +407,10 @@
   .step-input-row textarea {
     flex: 1; padding: 12px; border: 1.5px solid var(--border);
     border-radius: 10px; font-size: 15px; color: var(--ink);
-    background: white; font-family: 'Noto Sans JP', sans-serif;
+    background: white; font-family: 'DM Sans', sans-serif;
     outline: none; resize: none; min-height: 80px; line-height: 1.5;
   }
-  .step-input-row textarea:focus { border-color: var(--vermillion); }
+  .step-input-row textarea:focus { border-color: var(--accent); }
 
   .form-actions { display: flex; gap: 10px; padding-bottom: 8px; }
   .form-actions .btn-primary { flex: 1; }
@@ -429,7 +434,7 @@
   .settings-row:active { background: var(--cream-dark); }
   .settings-row-label { font-size: 15px; color: var(--ink); }
   .settings-row-value { font-size: 14px; color: var(--ink-faint); }
-  .settings-row-danger .settings-row-label { color: var(--vermillion); }
+  .settings-row-danger .settings-row-label { color: #cc3333; }
 
   .stats-grid {
     display: grid; grid-template-columns: 1fr 1fr;
@@ -440,8 +445,8 @@
     border: 1.5px solid var(--border); padding: 16px; text-align: center;
   }
   .stat-num {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 32px; font-weight: 700; color: var(--vermillion);
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px; font-weight: 400; color: var(--accent);
   }
   .stat-label { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
 
@@ -468,8 +473,8 @@
     padding-bottom: calc(24px + var(--safe-bottom));
   }
   .modal-title {
-    font-family: 'Noto Serif JP', serif;
-    font-size: 18px; font-weight: 700; margin-bottom: 12px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px; font-weight: 400; margin-bottom: 12px;
   }
   .modal-text { font-size: 15px; color: var(--ink-light); line-height: 1.6; margin-bottom: 20px; }
   .modal-actions { display: flex; gap: 10px; }
