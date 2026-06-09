@@ -135,30 +135,23 @@
   .home-content { padding: 20px; display: flex; flex-direction: column; gap: 24px; }
 
   .random-card {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    background: #881337;
     border-radius: 20px; padding: 28px;
     color: white; position: relative; overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    box-shadow: 0 8px 32px rgba(136,19,55,0.3);
   }
-  .random-card::before {
-    content: '';
-    position: absolute; top: -50px; right: -50px;
-    width: 200px; height: 200px;
-    background: var(--accent); border-radius: 50%;
-    opacity: 0.28;
-  }
-  .random-card::after {
-    content: '';
-    position: absolute; bottom: -40px; left: 10px;
-    width: 140px; height: 140px;
-    background: var(--accent); border-radius: 50%;
-    opacity: 0.14;
+  .random-card::before { display: none; }
+  .random-card::after { display: none; }
+  .random-card-svg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    pointer-events: none;
   }
   .random-label {
     font-size: 11px; letter-spacing: 0.18em;
-    color: var(--accent); margin-bottom: 10px;
+    color: rgba(255,255,255,0.75); margin-bottom: 10px;
     text-transform: uppercase; font-weight: 500;
+    position: relative; z-index: 1;
   }
   .random-name {
     font-family: 'DM Serif Display', serif;
@@ -169,15 +162,15 @@
   }
   .random-actions { display: flex; gap: 10px; position: relative; z-index: 1; }
   .random-btn {
-    background: rgba(201,168,76,0.18); color: white;
-    border: 1px solid rgba(201,168,76,0.45);
+    background: rgba(255,255,255,0.18); color: white;
+    border: 1px solid rgba(255,255,255,0.35);
     border-radius: 8px; padding: 8px 16px;
     font-size: 13px; cursor: pointer;
     font-family: 'DM Sans', sans-serif;
     transition: background 0.15s;
     display: flex; align-items: center; gap: 5px;
   }
-  .random-btn:active { background: rgba(201,168,76,0.32); }
+  .random-btn:active { background: rgba(255,255,255,0.3); }
 
   .section-label {
     font-size: 11px; letter-spacing: 0.12em;
@@ -503,6 +496,13 @@
     </div>
     <div class="home-content">
       <div id="random-card" class="random-card">
+        <svg class="random-card-svg" viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+          <ellipse cx="330" cy="30" rx="160" ry="100" fill="rgba(251,113,133,0.35)"/>
+          <ellipse cx="360" cy="80" rx="120" ry="80" fill="rgba(255,180,190,0.18)"/>
+          <ellipse cx="50" cy="130" rx="130" ry="70" fill="rgba(159,18,57,0.55)"/>
+          <ellipse cx="90" cy="50" rx="90" ry="65" fill="rgba(251,113,133,0.13)"/>
+          <ellipse cx="200" cy="150" rx="180" ry="55" fill="rgba(0,0,0,0.18)"/>
+        </svg>
         <div class="random-label">今日はこれ作る？</div>
         <div class="random-name" id="random-name">レシピがありません</div>
         <div class="random-actions">
