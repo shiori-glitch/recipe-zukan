@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="レシピ図鑑">
 <title>レシピ図鑑</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --cream: #ffffff;
@@ -561,6 +562,24 @@
       <div class="screen-title" id="form-title">新規登録</div>
       <div style="width:60px"></div>
     </div>
+
+    <!-- JSONインポートパネル -->
+    <div id="json-import-panel" style="margin:16px 20px 0;background:#f4f4f4;border-radius:14px;padding:16px;display:none;flex-direction:column;gap:10px">
+      <div style="font-size:12px;font-weight:500;color:#444;letter-spacing:0.05em">📋 ClaudeのJSONをここに貼り付け</div>
+      <textarea id="json-input" style="width:100%;min-height:120px;padding:12px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:#111;background:white;outline:none;resize:vertical;line-height:1.5" placeholder='{"name":"肉じゃが","tags":["じゃがいも"],...}'></textarea>
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary" style="flex:1;font-size:14px;padding:10px" onclick="applyJson()">フォームに反映する</button>
+        <button class="btn-secondary" style="font-size:14px;padding:10px" onclick="toggleJsonPanel()">閉じる</button>
+      </div>
+    </div>
+
+    <!-- JSONインポートボタン -->
+    <div style="padding:12px 20px 0;display:flex;justify-content:flex-end">
+      <button onclick="toggleJsonPanel()" style="background:none;border:1.5px solid #e8e8e8;border-radius:8px;padding:7px 14px;font-size:12px;font-family:'DM Sans',sans-serif;color:#444;cursor:pointer;display:flex;align-items:center;gap:5px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        ClaudeのJSONで取り込む
+      </button>
+    </div>
     <div class="form-content">
       <div class="form-group">
         <label class="form-label">料理名<span class="form-required">*</span></label>
@@ -610,6 +629,13 @@
         <div class="stat-card">
           <div class="stat-num" id="stat-logs">0</div>
           <div class="stat-label">調理記録</div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">クラウド同期</div>
+        <div class="settings-row" onclick="openSupabaseConfig()">
+          <span class="settings-row-label" id="sync-status-label">☁️ Supabase接続</span>
+          <span class="settings-row-value" id="sync-status-value">未接続</span>
         </div>
       </div>
       <div class="settings-section">
@@ -703,21 +729,114 @@
   </div>
 </div>
 
+<!-- Supabase接続設定モーダル -->
+<div class="overlay" id="supabase-config-overlay">
+  <div class="modal">
+    <div class="modal-title">☁️ Supabaseに接続</div>
+    <div class="modal-text" style="margin-bottom:14px">
+      Project URL と Publishable key を貼り付けてください。
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label">Project URL</label>
+      <input class="form-input" type="text" id="sb-url-input" placeholder="https://xxxxx.supabase.co" autocomplete="off">
+    </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label class="form-label">Publishable key</label>
+      <input class="form-input" type="text" id="sb-key-input" placeholder="sb_publishable_..." autocomplete="off">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeOverlay('supabase-config-overlay')">キャンセル</button>
+      <button class="btn-primary" onclick="saveSupabaseConfig()">接続する</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
 
 <script>
-// ===== DATA LAYER =====
-const STORAGE_KEY = 'recipezukan_v1';
+// ===== SUPABASE CONFIG =====
+const SB_CONFIG_KEY = 'recipezukan_sb_config';
+const LOCAL_CACHE_KEY = 'recipezukan_v1';
 
-function loadData() {
+let sb = null; // supabase client
+let sbConnected = false;
+
+function getSupabaseConfig() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(SB_CONFIG_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function initSupabase() {
+  const cfg = getSupabaseConfig();
+  if (cfg && cfg.url && cfg.key) {
+    try {
+      sb = window.supabase.createClient(cfg.url, cfg.key);
+      sbConnected = true;
+      return true;
+    } catch {
+      sb = null; sbConnected = false;
+      return false;
+    }
+  }
+  sb = null; sbConnected = false;
+  return false;
+}
+
+function openSupabaseConfig() {
+  const cfg = getSupabaseConfig();
+  document.getElementById('sb-url-input').value = cfg ? cfg.url : '';
+  document.getElementById('sb-key-input').value = cfg ? cfg.key : '';
+  document.getElementById('supabase-config-overlay').classList.add('open');
+}
+
+async function saveSupabaseConfig() {
+  const url = document.getElementById('sb-url-input').value.trim();
+  const key = document.getElementById('sb-key-input').value.trim();
+  if (!url || !key) { showToast('URLとキーを入力してください'); return; }
+
+  localStorage.setItem(SB_CONFIG_KEY, JSON.stringify({ url, key }));
+  const ok = initSupabase();
+
+  if (ok) {
+    // 接続テスト
+    try {
+      const { error } = await sb.from('recipes').select('id').limit(1);
+      if (error) throw error;
+      closeOverlay('supabase-config-overlay');
+      showToast('Supabaseに接続しました ✓');
+      updateSyncStatusLabel();
+      await syncFromCloud();
+      if (currentScreen === 'home') renderHome();
+      if (currentScreen === 'list') renderList();
+      if (currentScreen === 'settings') renderSettings();
+    } catch (e) {
+      showToast('接続に失敗しました。URLとキーを確認してください');
+      sb = null; sbConnected = false;
+      updateSyncStatusLabel();
+    }
+  } else {
+    showToast('接続情報の形式が正しくありません');
+  }
+}
+
+function updateSyncStatusLabel() {
+  const labelEl = document.getElementById('sync-status-value');
+  if (!labelEl) return;
+  labelEl.textContent = sbConnected ? '接続済み ✓' : '未接続';
+}
+
+// ===== LOCAL CACHE (オフライン用の控え) =====
+function loadLocalCache() {
+  try {
+    const raw = localStorage.getItem(LOCAL_CACHE_KEY);
     return raw ? JSON.parse(raw) : { recipes: [], cookingLogs: [] };
   } catch { return { recipes: [], cookingLogs: [] }; }
 }
 
-function saveData(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+function saveLocalCache(data) {
+  localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(data));
 }
 
 function uuid() {
@@ -725,6 +844,176 @@ function uuid() {
     const r = Math.random() * 16 | 0;
     return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
   });
+}
+
+// ===== DATA LAYER (Supabase優先・なければローカル) =====
+
+// recipes: {id, name, tags, ingredients, steps, memo, firstCookedAt, createdAt, updatedAt}
+// cookingLogs: {id, recipeId, cookedAt, note}
+
+function dbRecipeToApp(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    tags: row.tags || [],
+    ingredients: row.ingredients || [],
+    steps: row.steps || [],
+    memo: row.memo || '',
+    firstCookedAt: row.first_cooked_at || '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function dbLogToApp(row) {
+  return {
+    id: row.id,
+    recipeId: row.recipe_id,
+    cookedAt: row.cooked_at,
+    note: row.note || ''
+  };
+}
+
+async function loadData() {
+  if (sbConnected) {
+    try {
+      const [recipesRes, logsRes] = await Promise.all([
+        sb.from('recipes').select('*').order('created_at', { ascending: false }),
+        sb.from('cooking_logs').select('*')
+      ]);
+      if (recipesRes.error) throw recipesRes.error;
+      if (logsRes.error) throw logsRes.error;
+
+      const data = {
+        recipes: recipesRes.data.map(dbRecipeToApp),
+        cookingLogs: logsRes.data.map(dbLogToApp)
+      };
+      saveLocalCache(data); // バックアップとしてローカルにも保存
+      return data;
+    } catch (e) {
+      console.error('Supabase読み込み失敗、ローカルキャッシュを使用', e);
+      showToast('⚠️ 通信エラー。最後の同期データを表示中');
+      return loadLocalCache();
+    }
+  }
+  return loadLocalCache();
+}
+
+async function syncFromCloud() {
+  await loadData(); // ローカルキャッシュを更新するだけ
+}
+
+async function createRecipe(recipe) {
+  if (sbConnected) {
+    try {
+      const { data, error } = await sb.from('recipes').insert({
+        id: recipe.id,
+        name: recipe.name,
+        tags: recipe.tags,
+        ingredients: recipe.ingredients,
+        steps: recipe.steps,
+        memo: recipe.memo,
+        first_cooked_at: recipe.firstCookedAt || null,
+        created_at: recipe.createdAt,
+        updated_at: recipe.updatedAt
+      }).select().single();
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error(e);
+      showToast('⚠️ 保存に失敗しました（通信エラー）');
+      return false;
+    }
+  } else {
+    const cache = loadLocalCache();
+    cache.recipes.unshift(recipe);
+    saveLocalCache(cache);
+    return true;
+  }
+}
+
+async function updateRecipe(id, fields) {
+  if (sbConnected) {
+    try {
+      const { error } = await sb.from('recipes').update({
+        name: fields.name,
+        tags: fields.tags,
+        ingredients: fields.ingredients,
+        steps: fields.steps,
+        memo: fields.memo,
+        first_cooked_at: fields.firstCookedAt || null,
+        updated_at: fields.updatedAt
+      }).eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error(e);
+      showToast('⚠️ 更新に失敗しました（通信エラー）');
+      return false;
+    }
+  } else {
+    const cache = loadLocalCache();
+    const idx = cache.recipes.findIndex(r => r.id === id);
+    if (idx !== -1) cache.recipes[idx] = { ...cache.recipes[idx], ...fields };
+    saveLocalCache(cache);
+    return true;
+  }
+}
+
+async function deleteRecipeById(id) {
+  if (sbConnected) {
+    try {
+      const { error } = await sb.from('recipes').delete().eq('id', id);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error(e);
+      showToast('⚠️ 削除に失敗しました（通信エラー）');
+      return false;
+    }
+  } else {
+    const cache = loadLocalCache();
+    cache.recipes = cache.recipes.filter(r => r.id !== id);
+    cache.cookingLogs = cache.cookingLogs.filter(l => l.recipeId !== id);
+    saveLocalCache(cache);
+    return true;
+  }
+}
+
+async function createCookingLog(log) {
+  if (sbConnected) {
+    try {
+      const { error } = await sb.from('cooking_logs').insert({
+        id: log.id,
+        recipe_id: log.recipeId,
+        cooked_at: log.cookedAt,
+        note: log.note
+      });
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error(e);
+      showToast('⚠️ 記録に失敗しました（通信エラー）');
+      return false;
+    }
+  } else {
+    const cache = loadLocalCache();
+    cache.cookingLogs.push(log);
+    saveLocalCache(cache);
+    return true;
+  }
+}
+
+async function deleteAllCloudData() {
+  if (sbConnected) {
+    try {
+      await sb.from('cooking_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await sb.from('recipes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  localStorage.removeItem(LOCAL_CACHE_KEY);
 }
 
 // ===== STATE =====
@@ -735,9 +1024,10 @@ let editingRecipeId = null;
 let formTags = [];
 let randomRecipeId = null;
 let activeTagFilter = null;
+let cachedData = { recipes: [], cookingLogs: [] }; // 直近の描画に使うキャッシュ
 
 // ===== NAVIGATION =====
-function switchScreen(name, skipHistory = false) {
+async function switchScreen(name, skipHistory = false) {
   if (!skipHistory && currentScreen !== 'form' && currentScreen !== 'detail') {
     previousScreen = currentScreen;
   }
@@ -749,9 +1039,9 @@ function switchScreen(name, skipHistory = false) {
   }
   currentScreen = name;
 
-  if (name === 'home') renderHome();
-  if (name === 'list') renderList();
-  if (name === 'settings') renderSettings();
+  if (name === 'home') await renderHome();
+  if (name === 'list') await renderList();
+  if (name === 'settings') await renderSettings();
 }
 
 function goBack() {
@@ -761,8 +1051,9 @@ function goBack() {
 }
 
 // ===== HOME =====
-function renderHome() {
-  const data = loadData();
+async function renderHome() {
+  const data = await loadData();
+  cachedData = data;
   const recipes = data.recipes;
 
   // random
@@ -782,7 +1073,7 @@ function renderHome() {
   // recent
   const logs = data.cookingLogs;
   const recentRecipeIds = [...new Set(
-    logs.sort((a,b) => b.cookedAt.localeCompare(a.cookedAt)).map(l => l.recipeId)
+    [...logs].sort((a,b) => b.cookedAt.localeCompare(a.cookedAt)).map(l => l.recipeId)
   )].slice(0, 5);
 
   const recentEl = document.getElementById('recent-list');
@@ -810,7 +1101,7 @@ function renderHome() {
 }
 
 function shuffleRandom() {
-  const data = loadData();
+  const data = cachedData;
   if (data.recipes.length === 0) return;
   const others = data.recipes.filter(r => r.id !== randomRecipeId);
   const pool = others.length > 0 ? others : data.recipes;
@@ -824,8 +1115,9 @@ function openRandomRecipe() {
 }
 
 // ===== LIST =====
-function renderList() {
-  const data = loadData();
+async function renderList() {
+  const data = await loadData();
+  cachedData = data;
   renderTagFilter(data);
   filterRecipes();
 }
@@ -842,11 +1134,11 @@ function renderTagFilter(data) {
 function toggleTagFilter(tag) {
   activeTagFilter = activeTagFilter === tag ? null : tag;
   filterRecipes();
-  renderTagFilter(loadData());
+  renderTagFilter(cachedData);
 }
 
 function filterRecipes() {
-  const data = loadData();
+  const data = cachedData;
   const q = document.getElementById('search-input').value.trim().toLowerCase();
   let recipes = data.recipes;
 
@@ -880,16 +1172,22 @@ function filterRecipes() {
 }
 
 // ===== DETAIL =====
-function openRecipe(id) {
+async function openRecipe(id) {
   currentRecipeId = id;
   previousScreen = currentScreen;
-  renderDetail(id);
+  await renderDetail(id);
   switchScreen('detail', true);
 }
 
-function renderDetail(id) {
-  const data = loadData();
-  const r = data.recipes.find(r => r.id === id);
+async function renderDetail(id) {
+  // できるだけキャッシュから即時表示し、必要なら再取得
+  let data = cachedData;
+  let r = data.recipes.find(r => r.id === id);
+  if (!r) {
+    data = await loadData();
+    cachedData = data;
+    r = data.recipes.find(r => r.id === id);
+  }
   if (!r) return;
 
   const logs = data.cookingLogs.filter(l => l.recipeId === id)
@@ -953,13 +1251,66 @@ function renderDetail(id) {
   `;
 }
 
-function markCooked(id) {
-  const data = loadData();
+async function markCooked(id) {
   const today = new Date().toISOString().slice(0,10);
-  data.cookingLogs.push({ id: uuid(), recipeId: id, cookedAt: today, note: '' });
-  saveData(data);
-  renderDetail(id);
-  showToast('調理記録を追加しました 🍳');
+  const log = { id: uuid(), recipeId: id, cookedAt: today, note: '' };
+  const ok = await createCookingLog(log);
+  if (ok) {
+    showToast('調理記録を追加しました 🍳');
+  }
+  await renderDetail(id);
+}
+
+// ===== JSON IMPORT (フォームへの一括反映) =====
+function toggleJsonPanel() {
+  const panel = document.getElementById('json-import-panel');
+  const isOpen = panel.style.display === 'flex';
+  panel.style.display = isOpen ? 'none' : 'flex';
+  if (!isOpen) {
+    document.getElementById('json-input').value = '';
+    setTimeout(() => document.getElementById('json-input').focus(), 100);
+  }
+}
+
+function applyJson() {
+  const raw = document.getElementById('json-input').value.trim();
+  if (!raw) { showToast('JSONを貼り付けてください'); return; }
+
+  let data;
+  try {
+    const cleaned = raw.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+    data = JSON.parse(cleaned);
+  } catch {
+    showToast('JSONの形式が正しくありません');
+    return;
+  }
+
+  if (data.name) document.getElementById('f-name').value = data.name;
+
+  if (Array.isArray(data.tags)) {
+    formTags = data.tags.filter(t => t && typeof t === 'string');
+    renderFormTags();
+  }
+
+  if (Array.isArray(data.ingredients)) {
+    document.getElementById('ingredient-rows').innerHTML = '';
+    data.ingredients.forEach(i => {
+      if (i && i.name) addIngredientRow(i.name, i.amount || '');
+    });
+    if (data.ingredients.length === 0) addIngredientRow();
+  }
+
+  if (Array.isArray(data.steps)) {
+    document.getElementById('step-rows').innerHTML = '';
+    data.steps.forEach(s => { if (s) addStepRow(s); });
+    if (data.steps.length === 0) addStepRow();
+  }
+
+  if (data.memo) document.getElementById('f-memo').value = data.memo;
+
+  document.getElementById('json-import-panel').style.display = 'none';
+  document.getElementById('json-input').value = '';
+  showToast('フォームに反映しました ✓');
 }
 
 // ===== FORM =====
@@ -982,7 +1333,7 @@ function openNewForm() {
 }
 
 function editCurrentRecipe() {
-  const data = loadData();
+  const data = cachedData;
   const r = data.recipes.find(r => r.id === currentRecipeId);
   if (!r) return;
   editingRecipeId = r.id;
@@ -995,12 +1346,10 @@ function editCurrentRecipe() {
   document.getElementById('tag-field').value = '';
   renderFormTags();
 
-  // ingredients
   document.getElementById('ingredient-rows').innerHTML = '';
   (r.ingredients.length > 0 ? r.ingredients : []).forEach(i => addIngredientRow(i.name, i.amount));
   if (r.ingredients.length === 0) addIngredientRow();
 
-  // steps
   document.getElementById('step-rows').innerHTML = '';
   (r.steps.length > 0 ? r.steps : ['']).forEach(s => addStepRow(s));
 
@@ -1069,15 +1418,13 @@ function addStepRow(text='') {
 
 function removeStepRow(btn) {
   btn.parentElement.remove();
-  // renumber
   document.querySelectorAll('.step-input-row .step-num-label').forEach((el,i) => el.textContent = i+1);
 }
 
-function saveRecipe() {
+async function saveRecipe() {
   const name = document.getElementById('f-name').value.trim();
   if (!name) { showToast('料理名を入力してください'); return; }
 
-  // flush tag input
   const tagField = document.getElementById('tag-field');
   if (tagField.value.trim()) addTag(tagField.value.trim());
 
@@ -1089,38 +1436,43 @@ function saveRecipe() {
   const steps = [...document.querySelectorAll('#step-rows textarea')].map(t => t.value.trim());
   const memo = document.getElementById('f-memo').value.trim();
   const dateVal = document.getElementById('f-date').value;
-
-  const data = loadData();
   const now = new Date().toISOString();
 
-  if (editingRecipeId) {
-    const idx = data.recipes.findIndex(r => r.id === editingRecipeId);
-    if (idx !== -1) {
-      data.recipes[idx] = {
-        ...data.recipes[idx],
-        name, tags: formTags, ingredients, steps, memo,
-        firstCookedAt: dateVal, updatedAt: now
+  // 保存中はボタンを無効化
+  const saveBtn = document.querySelector('#screen-form .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '保存中…'; }
+
+  try {
+    if (editingRecipeId) {
+      const fields = { name, tags: formTags, ingredients, steps, memo, firstCookedAt: dateVal, updatedAt: now };
+      const ok = await updateRecipe(editingRecipeId, fields);
+      if (ok) {
+        showToast('レシピを更新しました ✓');
+        currentRecipeId = editingRecipeId;
+        await loadData(); // キャッシュ更新
+        cachedData = await loadData();
+        await renderDetail(editingRecipeId);
+        switchScreen('detail', true);
+      }
+    } else {
+      const newRecipe = {
+        id: uuid(), name, tags: formTags, ingredients, steps, memo,
+        firstCookedAt: dateVal, createdAt: now, updatedAt: now
       };
+      const ok = await createRecipe(newRecipe);
+      if (ok) {
+        if (dateVal) {
+          await createCookingLog({ id: uuid(), recipeId: newRecipe.id, cookedAt: dateVal, note: '初回調理' });
+        }
+        showToast('レシピを登録しました 🎉');
+        currentRecipeId = newRecipe.id;
+        cachedData = await loadData();
+        await renderDetail(newRecipe.id);
+        switchScreen('detail', true);
+      }
     }
-    saveData(data);
-    showToast('レシピを更新しました ✓');
-    currentRecipeId = editingRecipeId;
-    renderDetail(editingRecipeId);
-    switchScreen('detail', true);
-  } else {
-    const newRecipe = {
-      id: uuid(), name, tags: formTags, ingredients, steps, memo,
-      firstCookedAt: dateVal, createdAt: now, updatedAt: now
-    };
-    if (dateVal) {
-      data.cookingLogs.push({ id: uuid(), recipeId: newRecipe.id, cookedAt: dateVal, note: '初回調理' });
-    }
-    data.recipes.unshift(newRecipe);
-    saveData(data);
-    showToast('レシピを登録しました 🎉');
-    currentRecipeId = newRecipe.id;
-    renderDetail(newRecipe.id);
-    switchScreen('detail', true);
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '保存する'; }
   }
 }
 
@@ -1129,13 +1481,11 @@ function confirmDelete() {
   document.getElementById('delete-overlay').classList.add('open');
 }
 
-function deleteCurrentRecipe() {
-  const data = loadData();
-  data.recipes = data.recipes.filter(r => r.id !== currentRecipeId);
-  data.cookingLogs = data.cookingLogs.filter(l => l.recipeId !== currentRecipeId);
-  saveData(data);
+async function deleteCurrentRecipe() {
+  const ok = await deleteRecipeById(currentRecipeId);
   closeOverlay('delete-overlay');
-  showToast('レシピを削除しました');
+  if (ok) showToast('レシピを削除しました');
+  await loadData();
   switchScreen(previousScreen === 'detail' ? 'list' : previousScreen);
 }
 
@@ -1143,11 +1493,11 @@ function confirmDeleteAll() {
   document.getElementById('delete-all-overlay').classList.add('open');
 }
 
-function deleteAllData() {
-  localStorage.removeItem(STORAGE_KEY);
+async function deleteAllData() {
+  await deleteAllCloudData();
   closeOverlay('delete-all-overlay');
   showToast('データを削除しました');
-  renderSettings();
+  await renderSettings();
 }
 
 function closeOverlay(id) {
@@ -1155,14 +1505,16 @@ function closeOverlay(id) {
 }
 
 // ===== SETTINGS =====
-function renderSettings() {
-  const data = loadData();
+async function renderSettings() {
+  const data = await loadData();
+  cachedData = data;
   document.getElementById('stat-recipes').textContent = data.recipes.length;
   document.getElementById('stat-logs').textContent = data.cookingLogs.length;
+  updateSyncStatusLabel();
 }
 
 function exportData() {
-  const data = loadData();
+  const data = cachedData;
   const blob = new Blob([JSON.stringify({
     version: '1.0',
     exportedAt: new Date().toISOString(),
@@ -1185,20 +1537,26 @@ function handleImport(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (ev) => {
+  reader.onload = async (ev) => {
     try {
       const imported = JSON.parse(ev.target.result);
       if (!imported.recipes) throw new Error();
-      const data = loadData();
-      const existingIds = new Set(data.recipes.map(r => r.id));
+
+      const existing = cachedData;
+      const existingIds = new Set(existing.recipes.map(r => r.id));
       const newRecipes = imported.recipes.filter(r => !existingIds.has(r.id));
-      const existingLogIds = new Set(data.cookingLogs.map(l => l.id));
+      const existingLogIds = new Set(existing.cookingLogs.map(l => l.id));
       const newLogs = (imported.cookingLogs||[]).filter(l => !existingLogIds.has(l.id));
-      data.recipes.push(...newRecipes);
-      data.cookingLogs.push(...newLogs);
-      saveData(data);
+
+      for (const r of newRecipes) {
+        await createRecipe(r);
+      }
+      for (const l of newLogs) {
+        await createCookingLog(l);
+      }
+
       showToast(`${newRecipes.length}件のレシピをインポートしました`);
-      renderSettings();
+      await renderSettings();
     } catch {
       showToast('インポートに失敗しました');
     }
@@ -1231,9 +1589,10 @@ function esc(str) {
 }
 
 // ===== INIT =====
-// サンプルデータ（初回のみ）
-function seedSampleData() {
-  const data = loadData();
+function seedSampleDataIfEmpty() {
+  // Supabase未接続時のみ、ローカルにサンプルを入れる（初回体験用）
+  if (sbConnected) return;
+  const data = loadLocalCache();
   if (data.recipes.length > 0) return;
   const sample = [
     {
@@ -1276,12 +1635,17 @@ function seedSampleData() {
     { id: uuid(), recipeId: sample[1].id, cookedAt: '2026-05-20', note: '初回調理' },
     { id: uuid(), recipeId: sample[1].id, cookedAt: today, note: '' },
   ];
-  saveData({ recipes: sample, cookingLogs: logs });
+  saveLocalCache({ recipes: sample, cookingLogs: logs });
 }
 
-seedSampleData();
-renderHome();
-renderSettings();
+async function init() {
+  initSupabase();
+  seedSampleDataIfEmpty();
+  await renderHome();
+  await renderSettings();
+}
+
+init();
 </script>
 </body>
 </html>
