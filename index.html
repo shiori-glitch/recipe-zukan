@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="レシピ図鑑">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
 <title>レシピ図鑑</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -247,13 +249,24 @@
     font-family: 'DM Serif Display', serif;
     font-size: 18px; font-weight: 400; margin-bottom: 8px;
   }
-  .recipe-card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  .recipe-card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
   .tag-badge {
     background: var(--accent-light); color: var(--accent-dark);
-    padding: 3px 9px; border-radius: 20px; font-size: 11px;
-    font-weight: 500;
+    padding: 4px 10px; border-radius: 20px; font-size: 11px;
+    font-weight: 500; white-space: nowrap; flex-shrink: 0;
+    line-height: 1.4; display: inline-block;
+    border: 1px solid rgba(160,122,40,0.15);
   }
   .recipe-card-meta { font-size: 12px; color: var(--ink-faint); }
+
+  /* コンパクト表示（タイトルのみ） */
+  .recipe-list.compact { gap: 10px; }
+  .recipe-card.compact-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px; border-radius: 10px;
+  }
+  .recipe-card.compact-item .recipe-card-name { margin-bottom: 0; font-size: 15px; }
+  .recipe-card.compact-item .compact-arrow { color: var(--border); flex-shrink: 0; }
 
   /* ===== RECIPE DETAIL ===== */
   .detail-content { padding: 24px 20px; display: flex; flex-direction: column; gap: 24px; }
@@ -516,7 +529,13 @@
       </div>
 
       <div>
-        <div class="section-label">最近作ったもの</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="section-label" style="margin-bottom:0">最近作ったもの</div>
+          <button onclick="switchScreen('list')" style="background:none;border:none;color:var(--accent-dark);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:3px;padding:2px">
+            すべて見る
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
         <div id="recent-list" class="recent-list"></div>
       </div>
     </div>
@@ -528,6 +547,17 @@
   <div class="screen" id="screen-list">
     <div class="screen-header">
       <div class="screen-title">すべてのレシピ</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select id="sort-select" onchange="filterRecipes()" style="font-size:13px;border:1.5px solid var(--border);border-radius:8px;padding:6px 8px;background:white;color:var(--ink-light);font-family:'DM Sans',sans-serif;outline:none;max-width:120px">
+          <option value="created_desc">登録が新しい順</option>
+          <option value="created_asc">登録が古い順</option>
+          <option value="cooked_desc">最近作った順</option>
+          <option value="name_asc">名前（あ→ん）</option>
+        </select>
+        <button id="view-toggle-btn" onclick="toggleViewMode()" title="表示切替" style="background:white;border:1.5px solid var(--border);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-light);flex-shrink:0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+      </div>
     </div>
     <div class="search-bar-wrap">
       <input class="search-bar" type="search" placeholder="料理名・食材で検索…" id="search-input" oninput="filterRecipes()" autocomplete="off">
@@ -566,7 +596,7 @@
     <!-- JSONインポートパネル -->
     <div id="json-import-panel" style="margin:16px 20px 0;background:#f4f4f4;border-radius:14px;padding:16px;display:none;flex-direction:column;gap:10px">
       <div style="font-size:12px;font-weight:500;color:#444;letter-spacing:0.05em">📋 ClaudeのJSONをここに貼り付け</div>
-      <textarea id="json-input" style="width:100%;min-height:120px;padding:12px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;color:#111;background:white;outline:none;resize:vertical;line-height:1.5" placeholder='{"name":"肉じゃが","tags":["じゃがいも"],...}'></textarea>
+      <textarea id="json-input" style="width:100%;min-height:120px;padding:12px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:16px;font-family:'DM Sans',sans-serif;color:#111;background:white;outline:none;resize:vertical;line-height:1.5" placeholder='{"name":"肉じゃが","tags":["じゃがいも"],...}'></textarea>
       <div style="display:flex;gap:8px">
         <button class="btn-primary" style="flex:1;font-size:14px;padding:10px" onclick="applyJson()">フォームに反映する</button>
         <button class="btn-secondary" style="font-size:14px;padding:10px" onclick="toggleJsonPanel()">閉じる</button>
@@ -1137,10 +1167,19 @@ function toggleTagFilter(tag) {
   renderTagFilter(cachedData);
 }
 
+let listViewMode = localStorage.getItem('recipezukan_view_mode') || 'compact'; // 'card' or 'compact'
+
+function toggleViewMode() {
+  listViewMode = listViewMode === 'card' ? 'compact' : 'card';
+  localStorage.setItem('recipezukan_view_mode', listViewMode);
+  filterRecipes();
+}
+
 function filterRecipes() {
   const data = cachedData;
   const q = document.getElementById('search-input').value.trim().toLowerCase();
-  let recipes = data.recipes;
+  const sortBy = document.getElementById('sort-select')?.value || 'created_desc';
+  let recipes = [...data.recipes];
 
   if (q) recipes = recipes.filter(r =>
     r.name.toLowerCase().includes(q) ||
@@ -1150,8 +1189,28 @@ function filterRecipes() {
 
   if (activeTagFilter) recipes = recipes.filter(r => r.tags.includes(activeTagFilter));
 
+  const logs = data.cookingLogs;
+  function lastCookedOf(r) {
+    const ls = logs.filter(l => l.recipeId === r.id).sort((a,b) => b.cookedAt.localeCompare(a.cookedAt));
+    return ls.length > 0 ? ls[0].cookedAt : '';
+  }
+
+  if (sortBy === 'created_desc') {
+    recipes.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+  } else if (sortBy === 'created_asc') {
+    recipes.sort((a,b) => (a.createdAt||'').localeCompare(b.createdAt||''));
+  } else if (sortBy === 'cooked_desc') {
+    recipes.sort((a,b) => lastCookedOf(b).localeCompare(lastCookedOf(a)));
+  } else if (sortBy === 'name_asc') {
+    recipes.sort((a,b) => a.name.localeCompare(b.name, 'ja'));
+  }
+
   const el = document.getElementById('recipe-list');
+  const toggleBtn = document.getElementById('view-toggle-btn');
+  if (toggleBtn) toggleBtn.style.color = listViewMode === 'compact' ? 'var(--accent-dark)' : 'var(--ink-light)';
+
   if (recipes.length === 0) {
+    el.className = 'recipe-list';
     el.innerHTML = `<div class="empty-state">
       <div class="empty-state-icon">${data.recipes.length === 0 ? '📖' : '🔍'}</div>
       <div class="empty-state-text">${data.recipes.length === 0 ? 'レシピがまだありません\n＋ボタンから登録しましょう' : '一致するレシピが見つかりません'}</div>
@@ -1159,7 +1218,17 @@ function filterRecipes() {
     return;
   }
 
-  const logs = data.cookingLogs;
+  if (listViewMode === 'compact') {
+    el.className = 'recipe-list compact';
+    el.innerHTML = recipes.map(r => `
+      <div class="recipe-card compact-item" onclick="openRecipe('${r.id}')">
+        <div class="recipe-card-name">${esc(r.name)}</div>
+        <svg class="compact-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+      </div>`).join('');
+    return;
+  }
+
+  el.className = 'recipe-list';
   el.innerHTML = recipes.map(r => {
     const lastLog = logs.filter(l => l.recipeId === r.id).sort((a,b) => b.cookedAt.localeCompare(a.cookedAt))[0];
     const tagsHtml = r.tags.slice(0,4).map(t => `<span class="tag-badge">${esc(t)}</span>`).join('');
@@ -1241,7 +1310,7 @@ async function renderDetail(id) {
     <div>
       <div class="detail-name">${esc(r.name)}</div>
       ${tagsHtml}
-      <div class="detail-date">登録日：${r.createdAt ? fmtDate(r.createdAt.slice(0,10)) : '不明'}</div>
+      <div class="detail-date">登録日：${r.createdAt ? fmtDate(r.createdAt.slice(0,10)) : '不明'}${r.firstCookedAt ? '　/　初回調理日：' + fmtDate(r.firstCookedAt) : ''}</div>
     </div>
     ${ingredientsHtml}
     ${stepsHtml}
