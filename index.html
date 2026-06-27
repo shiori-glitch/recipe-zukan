@@ -231,6 +231,7 @@
     cursor: pointer; transition: all 0.15s;
     font-family: 'DM Sans', sans-serif;
     color: var(--ink-light);
+    flex-shrink: 0;
   }
   .tag-chip.active {
     background: var(--ink); color: white;
@@ -1155,7 +1156,8 @@ async function renderList() {
 function renderTagFilter(data) {
   const allTags = [...new Set(data.recipes.flatMap(r => r.tags))].sort();
   const wrap = document.getElementById('tag-filter-wrap');
-  if (allTags.length === 0) { wrap.innerHTML = ''; return; }
+  if (allTags.length === 0) { wrap.innerHTML = ''; wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
   wrap.innerHTML = allTags.map(t =>
     `<button class="tag-chip ${activeTagFilter === t ? 'active' : ''}" onclick="toggleTagFilter('${esc(t)}')">${esc(t)}</button>`
   ).join('');
