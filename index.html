@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="レシピ図鑑">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="apple-touch-icon" href="favicon.svg">
+<link rel="icon" type="image/png" href="favicon-192-color.png">
+<link rel="apple-touch-icon" href="apple-touch-icon-color.png">
 <title>レシピ図鑑</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -225,6 +225,7 @@
   .tag-filter-wrap {
     padding: 8px 16px; display: flex; gap: 8px;
     overflow-x: auto; scrollbar-width: none; min-height: fit-content;
+    align-items: center;
   }
   .tag-filter-wrap::-webkit-scrollbar { display: none; }
   .tag-chip {
@@ -238,6 +239,13 @@
     -webkit-appearance: none; appearance: none;
     -webkit-text-fill-color: var(--ink-light);
     opacity: 1;
+    line-height: 1.4;
+    display: inline-flex;
+    align-items: center;
+    height: auto;
+    box-sizing: border-box;
+    vertical-align: middle;
+    margin: 0;
   }
   .tag-chip.active {
     background-color: var(--ink); color: white !important;
@@ -367,6 +375,21 @@
   }
   .form-input:focus, .form-textarea:focus { border-color: var(--accent); }
   .form-textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
+
+  input[type="date"].form-input {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    box-sizing: border-box;
+    display: block;
+  }
+  input[type="date"].form-input::-webkit-date-and-time-value {
+    text-align: left;
+    width: 100%;
+    min-width: 100%;
+  }
 
   .tag-input-wrap {
     display: flex; flex-wrap: wrap; gap: 6px;
