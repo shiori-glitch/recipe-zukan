@@ -227,14 +227,18 @@
   .tag-chip {
     white-space: nowrap; padding: 6px 12px;
     border-radius: 20px; font-size: 12px;
-    border: 1.5px solid var(--border); background: white;
+    border: 1.5px solid var(--border); background-color: white;
     cursor: pointer; transition: all 0.15s;
     font-family: 'DM Sans', sans-serif;
-    color: var(--ink-light);
+    color: var(--ink-light) !important;
     flex-shrink: 0;
+    -webkit-appearance: none; appearance: none;
+    -webkit-text-fill-color: var(--ink-light);
+    opacity: 1;
   }
   .tag-chip.active {
-    background: var(--ink); color: white;
+    background-color: var(--ink); color: white !important;
+    -webkit-text-fill-color: white;
     border-color: var(--ink);
   }
 
