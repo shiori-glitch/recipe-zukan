@@ -530,7 +530,18 @@
 </head>
 <body>
 
-<div id="app">
+<!-- ログイン画面 -->
+<div id="screen-login" style="display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100dvh;padding:24px;background:var(--cream)">
+  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:20px;align-items:center">
+    <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--ink);margin-bottom:8px">レシピ図鑑</div>
+    <input id="login-email" type="email" class="form-input" placeholder="メールアドレス" autocomplete="email" style="width:100%">
+    <input id="login-password" type="password" class="form-input" placeholder="パスワード" autocomplete="current-password" style="width:100%">
+    <button class="btn-primary" style="width:100%" onclick="doLogin()">ログイン</button>
+    <div id="login-error" style="color:#cc3333;font-size:13px;text-align:center;min-height:18px"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
   <!-- ホーム画面 -->
   <div class="screen active" id="screen-home">
     <div class="screen-header">
@@ -663,6 +674,15 @@
         <button class="add-row-btn" onclick="addStepRow()">＋ 手順を追加</button>
       </div>
       <div class="form-group">
+        <label class="form-label">写真</label>
+        <div id="photo-preview-area" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <div id="photo-empty-state" style="width:100%;border:1.5px dashed var(--border);border-radius:10px;padding:24px;text-align:center;color:var(--ink-faint);font-size:13px;cursor:pointer" onclick="document.getElementById('photo-file-input').click()">
+            📷 タップして写真を選ぶ
+          </div>
+        </div>
+        <input type="file" id="photo-file-input" accept="image/*" style="display:none" onchange="handlePhotoSelect(event)">
+      </div>
+      <div class="form-group">
         <label class="form-label">メモ・URL</label>
         <textarea class="form-textarea" id="f-memo" placeholder="参考URLや気づきなど…"></textarea>
       </div>
@@ -693,10 +713,13 @@
         </div>
       </div>
       <div class="settings-section">
-        <div class="settings-section-title">クラウド同期</div>
-        <div class="settings-row" onclick="openSupabaseConfig()">
-          <span class="settings-row-label" id="sync-status-label">☁️ Supabase接続</span>
+        <div class="settings-section-title">アカウント</div>
+        <div class="settings-row">
+          <span class="settings-row-label" id="sync-status-label">☁️ クラウド同期</span>
           <span class="settings-row-value" id="sync-status-value">未接続</span>
+        </div>
+        <div class="settings-row settings-row-danger" onclick="doLogout()">
+          <span class="settings-row-label">ログアウト</span>
         </div>
       </div>
       <div class="settings-section">
@@ -790,102 +813,96 @@
   </div>
 </div>
 
-<!-- Supabase接続設定モーダル -->
-<div class="overlay" id="supabase-config-overlay">
-  <div class="modal">
-    <div class="modal-title">☁️ Supabaseに接続</div>
-    <div class="modal-text" style="margin-bottom:14px">
-      Project URL と Publishable key を貼り付けてください。
-    </div>
-    <div class="form-group" style="margin-bottom:12px">
-      <label class="form-label">Project URL</label>
-      <input class="form-input" type="text" id="sb-url-input" placeholder="https://xxxxx.supabase.co" autocomplete="off">
-    </div>
-    <div class="form-group" style="margin-bottom:18px">
-      <label class="form-label">Publishable key</label>
-      <input class="form-input" type="text" id="sb-key-input" placeholder="sb_publishable_..." autocomplete="off">
-    </div>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeOverlay('supabase-config-overlay')">キャンセル</button>
-      <button class="btn-primary" onclick="saveSupabaseConfig()">接続する</button>
-    </div>
-  </div>
-</div>
-
 <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
 
 <script>
-// ===== SUPABASE CONFIG =====
-const SB_CONFIG_KEY = 'recipezukan_sb_config';
+// ===== SUPABASE CONFIG (埋め込み) =====
+// 下の2つを実際のSupabaseプロジェクトの値に書き換えてください。
+// Project URL: Supabase → Settings → General → Project URL
+// Publishable key: Supabase → Settings → API Keys → Publishable key
+const SUPABASE_URL = 'https://kyyktdjvkkwnugzwkihq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_pwR90wz5y6IwthcKrFg0Og_MFiIa1eG';
+
 const LOCAL_CACHE_KEY = 'recipezukan_v1';
+const SESSION_KEY = 'recipezukan_session';
 
 let sb = null; // supabase client
 let sbConnected = false;
-
-function getSupabaseConfig() {
-  try {
-    const raw = localStorage.getItem(SB_CONFIG_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
+let currentUser = null;
 
 function initSupabase() {
-  const cfg = getSupabaseConfig();
-  if (cfg && cfg.url && cfg.key) {
-    try {
-      sb = window.supabase.createClient(cfg.url, cfg.key);
-      sbConnected = true;
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
+    });
+    sbConnected = true;
+    return true;
+  } catch (e) {
+    console.error('Supabase初期化失敗', e);
+    sb = null; sbConnected = false;
+    return false;
+  }
+}
+
+async function checkSession() {
+  if (!sbConnected) return false;
+  try {
+    const { data, error } = await sb.auth.getSession();
+    if (error) throw error;
+    if (data.session && data.session.user) {
+      currentUser = data.session.user;
       return true;
-    } catch {
-      sb = null; sbConnected = false;
-      return false;
     }
+    return false;
+  } catch (e) {
+    console.error(e);
+    return false;
   }
-  sb = null; sbConnected = false;
-  return false;
 }
 
-function openSupabaseConfig() {
-  const cfg = getSupabaseConfig();
-  document.getElementById('sb-url-input').value = cfg ? cfg.url : '';
-  document.getElementById('sb-key-input').value = cfg ? cfg.key : '';
-  document.getElementById('supabase-config-overlay').classList.add('open');
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+
+  if (!email || !password) {
+    errEl.textContent = 'メールアドレスとパスワードを入力してください';
+    return;
+  }
+  if (!sbConnected) {
+    errEl.textContent = 'Supabaseに接続できていません';
+    return;
+  }
+
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    currentUser = data.user;
+    showApp();
+  } catch (e) {
+    errEl.textContent = 'ログインに失敗しました。メール・パスワードを確認してください';
+  }
 }
 
-async function saveSupabaseConfig() {
-  const url = document.getElementById('sb-url-input').value.trim();
-  const key = document.getElementById('sb-key-input').value.trim();
-  if (!url || !key) { showToast('URLとキーを入力してください'); return; }
+async function doLogout() {
+  if (sb) await sb.auth.signOut();
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('screen-login').style.display = 'flex';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
 
-  localStorage.setItem(SB_CONFIG_KEY, JSON.stringify({ url, key }));
-  const ok = initSupabase();
-
-  if (ok) {
-    // 接続テスト
-    try {
-      const { error } = await sb.from('recipes').select('id').limit(1);
-      if (error) throw error;
-      closeOverlay('supabase-config-overlay');
-      showToast('Supabaseに接続しました ✓');
-      updateSyncStatusLabel();
-      await syncFromCloud();
-      if (currentScreen === 'home') renderHome();
-      if (currentScreen === 'list') renderList();
-      if (currentScreen === 'settings') renderSettings();
-    } catch (e) {
-      showToast('接続に失敗しました。URLとキーを確認してください');
-      sb = null; sbConnected = false;
-      updateSyncStatusLabel();
-    }
-  } else {
-    showToast('接続情報の形式が正しくありません');
-  }
+function showApp() {
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('app').style.display = '';
 }
 
 function updateSyncStatusLabel() {
   const labelEl = document.getElementById('sync-status-value');
   if (!labelEl) return;
-  labelEl.textContent = sbConnected ? '接続済み ✓' : '未接続';
+  labelEl.textContent = sbConnected && currentUser ? '接続済み ✓' : '未接続';
 }
 
 // ===== LOCAL CACHE (オフライン用の控え) =====
@@ -920,6 +937,7 @@ function dbRecipeToApp(row) {
     ingredients: row.ingredients || [],
     steps: row.steps || [],
     memo: row.memo || '',
+    photoUrl: row.photo_url || null,
     firstCookedAt: row.first_cooked_at || '',
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -969,11 +987,13 @@ async function createRecipe(recipe) {
     try {
       const { data, error } = await sb.from('recipes').insert({
         id: recipe.id,
+        user_id: currentUser.id,
         name: recipe.name,
         tags: recipe.tags,
         ingredients: recipe.ingredients,
         steps: recipe.steps,
         memo: recipe.memo,
+        photo_url: recipe.photoUrl || null,
         first_cooked_at: recipe.firstCookedAt || null,
         created_at: recipe.createdAt,
         updated_at: recipe.updatedAt
@@ -996,7 +1016,7 @@ async function createRecipe(recipe) {
 async function updateRecipe(id, fields) {
   if (sbConnected) {
     try {
-      const { error } = await sb.from('recipes').update({
+      const payload = {
         name: fields.name,
         tags: fields.tags,
         ingredients: fields.ingredients,
@@ -1004,7 +1024,9 @@ async function updateRecipe(id, fields) {
         memo: fields.memo,
         first_cooked_at: fields.firstCookedAt || null,
         updated_at: fields.updatedAt
-      }).eq('id', id);
+      };
+      if (fields.hasOwnProperty('photoUrl')) payload.photo_url = fields.photoUrl || null;
+      const { error } = await sb.from('recipes').update(payload).eq('id', id);
       if (error) throw error;
       return true;
     } catch (e) {
@@ -1046,6 +1068,7 @@ async function createCookingLog(log) {
     try {
       const { error } = await sb.from('cooking_logs').insert({
         id: log.id,
+        user_id: currentUser.id,
         recipe_id: log.recipeId,
         cooked_at: log.cookedAt,
         note: log.note
@@ -1062,6 +1085,24 @@ async function createCookingLog(log) {
     cache.cookingLogs.push(log);
     saveLocalCache(cache);
     return true;
+  }
+}
+
+async function uploadPhoto(file, recipeId) {
+  if (!sbConnected || !currentUser) return null;
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const path = `${currentUser.id}/${recipeId}-${Date.now()}.${ext}`;
+    const { error: uploadError } = await sb.storage.from('recipe-photos').upload(path, file, {
+      cacheControl: '3600', upsert: false
+    });
+    if (uploadError) throw uploadError;
+    const { data } = sb.storage.from('recipe-photos').getPublicUrl(path);
+    return data.publicUrl;
+  } catch (e) {
+    console.error('写真アップロード失敗', e);
+    showToast('⚠️ 写真のアップロードに失敗しました');
+    return null;
   }
 }
 
@@ -1086,6 +1127,9 @@ let formTags = [];
 let randomRecipeId = null;
 let activeTagFilter = null;
 let cachedData = { recipes: [], cookingLogs: [] }; // 直近の描画に使うキャッシュ
+let formPhotoFile = null;   // 新しく選んだ写真（File）
+let formPhotoUrl = null;    // 既存の写真URL（編集時）
+let formPhotoRemoved = false; // 既存写真を削除する指示フラグ
 
 // ===== NAVIGATION =====
 async function switchScreen(name, skipHistory = false) {
@@ -1264,10 +1308,16 @@ function filterRecipes() {
   el.innerHTML = recipes.map(r => {
     const lastLog = logs.filter(l => l.recipeId === r.id).sort((a,b) => b.cookedAt.localeCompare(a.cookedAt))[0];
     const tagsHtml = r.tags.slice(0,4).map(t => `<span class="tag-badge">${esc(t)}</span>`).join('');
-    return `<div class="recipe-card" onclick="openRecipe('${r.id}')">
-      <div class="recipe-card-name">${esc(r.name)}</div>
-      ${tagsHtml ? `<div class="recipe-card-tags">${tagsHtml}</div>` : ''}
-      <div class="recipe-card-meta">${lastLog ? '最後：' + fmtDate(lastLog.cookedAt) : r.createdAt ? '登録：' + fmtDate(r.createdAt.slice(0,10)) : ''}</div>
+    const thumbHtml = r.photoUrl
+      ? `<img src="${esc(r.photoUrl)}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0">`
+      : '';
+    return `<div class="recipe-card" onclick="openRecipe('${r.id}')" style="display:flex;gap:12px;align-items:flex-start">
+      ${thumbHtml}
+      <div style="flex:1;min-width:0">
+        <div class="recipe-card-name">${esc(r.name)}</div>
+        ${tagsHtml ? `<div class="recipe-card-tags">${tagsHtml}</div>` : ''}
+        <div class="recipe-card-meta">${lastLog ? '最後：' + fmtDate(lastLog.cookedAt) : r.createdAt ? '登録：' + fmtDate(r.createdAt.slice(0,10)) : ''}</div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1338,7 +1388,11 @@ async function renderDetail(id) {
         ${r.tags.map(t=>`<span class="tag-badge">${esc(t)}</span>`).join('')}
       </div>` : '';
 
+  const photoHtml = r.photoUrl
+    ? `<img src="${esc(r.photoUrl)}" style="width:100%;border-radius:14px;display:block;max-height:280px;object-fit:cover;margin-bottom:-4px">` : '';
+
   document.getElementById('detail-content').innerHTML = `
+    ${photoHtml}
     <div>
       <div class="detail-name">${esc(r.name)}</div>
       ${tagsHtml}
@@ -1415,9 +1469,56 @@ function applyJson() {
 }
 
 // ===== FORM =====
+function resetPhotoArea() {
+  formPhotoFile = null;
+  formPhotoUrl = null;
+  formPhotoRemoved = false;
+  renderPhotoPreview();
+}
+
+function renderPhotoPreview() {
+  const area = document.getElementById('photo-preview-area');
+  if (formPhotoFile) {
+    const url = URL.createObjectURL(formPhotoFile);
+    area.innerHTML = `
+      <div style="position:relative;width:100%">
+        <img src="${url}" style="width:100%;border-radius:10px;display:block;max-height:240px;object-fit:cover">
+        <button onclick="removePhoto()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.55);color:white;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer">×</button>
+      </div>`;
+  } else if (formPhotoUrl && !formPhotoRemoved) {
+    area.innerHTML = `
+      <div style="position:relative;width:100%">
+        <img src="${formPhotoUrl}" style="width:100%;border-radius:10px;display:block;max-height:240px;object-fit:cover">
+        <button onclick="removePhoto()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.55);color:white;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer">×</button>
+      </div>`;
+  } else {
+    area.innerHTML = `
+      <div id="photo-empty-state" style="width:100%;border:1.5px dashed var(--border);border-radius:10px;padding:24px;text-align:center;color:var(--ink-faint);font-size:13px;cursor:pointer" onclick="document.getElementById('photo-file-input').click()">
+        📷 タップして写真を選ぶ
+      </div>`;
+  }
+}
+
+function handlePhotoSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('画像ファイルを選んでください'); return; }
+  formPhotoFile = file;
+  formPhotoRemoved = false;
+  renderPhotoPreview();
+  e.target.value = '';
+}
+
+function removePhoto() {
+  formPhotoFile = null;
+  if (formPhotoUrl) formPhotoRemoved = true;
+  renderPhotoPreview();
+}
+
 function openNewForm() {
   editingRecipeId = null;
   formTags = [];
+  resetPhotoArea();
   previousScreen = currentScreen;
   document.getElementById('form-title').textContent = '新規登録';
   document.getElementById('f-name').value = '';
@@ -1439,6 +1540,10 @@ function editCurrentRecipe() {
   if (!r) return;
   editingRecipeId = r.id;
   formTags = [...r.tags];
+  formPhotoFile = null;
+  formPhotoUrl = r.photoUrl || null;
+  formPhotoRemoved = false;
+  renderPhotoPreview();
   previousScreen = 'detail';
   document.getElementById('form-title').textContent = '編集';
   document.getElementById('f-name').value = r.name;
@@ -1545,7 +1650,16 @@ async function saveRecipe() {
 
   try {
     if (editingRecipeId) {
-      const fields = { name, tags: formTags, ingredients, steps, memo, firstCookedAt: dateVal, updatedAt: now };
+      let photoUrl = formPhotoUrl;
+      if (formPhotoFile) {
+        if (saveBtn) saveBtn.textContent = '写真をアップロード中…';
+        const uploaded = await uploadPhoto(formPhotoFile, editingRecipeId);
+        if (uploaded) photoUrl = uploaded;
+      } else if (formPhotoRemoved) {
+        photoUrl = null;
+      }
+      if (saveBtn) saveBtn.textContent = '保存中…';
+      const fields = { name, tags: formTags, ingredients, steps, memo, photoUrl, firstCookedAt: dateVal, updatedAt: now };
       const ok = await updateRecipe(editingRecipeId, fields);
       if (ok) {
         showToast('レシピを更新しました ✓');
@@ -1556,8 +1670,15 @@ async function saveRecipe() {
         switchScreen('detail', true);
       }
     } else {
+      const newId = uuid();
+      let photoUrl = null;
+      if (formPhotoFile) {
+        if (saveBtn) saveBtn.textContent = '写真をアップロード中…';
+        photoUrl = await uploadPhoto(formPhotoFile, newId);
+      }
+      if (saveBtn) saveBtn.textContent = '保存中…';
       const newRecipe = {
-        id: uuid(), name, tags: formTags, ingredients, steps, memo,
+        id: newId, name, tags: formTags, ingredients, steps, memo, photoUrl,
         firstCookedAt: dateVal, createdAt: now, updatedAt: now
       };
       const ok = await createRecipe(newRecipe);
@@ -1741,9 +1862,19 @@ function seedSampleDataIfEmpty() {
 
 async function init() {
   initSupabase();
-  seedSampleDataIfEmpty();
-  await renderHome();
-  await renderSettings();
+  const loggedIn = await checkSession();
+  if (loggedIn) {
+    showApp();
+    await renderHome();
+    await renderSettings();
+  } else {
+    document.getElementById('screen-login').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    // Enterキーでログインできるように
+    document.getElementById('login-password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doLogin();
+    });
+  }
 }
 
 init();
