@@ -5,6 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -1499,11 +1500,35 @@ function renderPhotoPreview() {
   }
 }
 
-function handlePhotoSelect(e) {
+async function compressImage(file, maxLongEdge = 1200, quality = 0.85) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxLongEdge || height > maxLongEdge) {
+        if (width >= height) { height = Math.round(height * maxLongEdge / width); width = maxLongEdge; }
+        else { width = Math.round(width * maxLongEdge / height); height = maxLongEdge; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => {
+        resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+      }, 'image/jpeg', quality);
+    };
+    img.src = url;
+  });
+}
+
+async function handlePhotoSelect(e) {
   const file = e.target.files[0];
   if (!file) return;
   if (!file.type.startsWith('image/')) { showToast('画像ファイルを選んでください'); return; }
-  formPhotoFile = file;
+  showToast('画像を圧縮中…');
+  formPhotoFile = await compressImage(file);
   formPhotoRemoved = false;
   renderPhotoPreview();
   e.target.value = '';
