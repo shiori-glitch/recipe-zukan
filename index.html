@@ -224,14 +224,14 @@
   .search-bar:focus { border-color: var(--accent); }
 
   .tag-filter-wrap {
-    padding: 8px 16px; display: flex; gap: 8px;
+    padding: 10px 16px; display: flex; gap: 8px;
     overflow-x: auto; scrollbar-width: none; min-height: fit-content;
     align-items: center;
   }
   .tag-filter-wrap::-webkit-scrollbar { display: none; }
   .tag-chip {
-    white-space: nowrap; padding: 6px 12px;
-    border-radius: 20px; font-size: 12px;
+    white-space: nowrap; padding: 8px 14px;
+    border-radius: 20px; font-size: 13px;
     border: 1.5px solid var(--border); background-color: white;
     cursor: pointer; transition: all 0.15s;
     font-family: 'DM Sans', sans-serif;
@@ -240,12 +240,14 @@
     -webkit-appearance: none; appearance: none;
     -webkit-text-fill-color: var(--ink-light);
     opacity: 1;
-    line-height: 1.4;
+    line-height: 1.5;
     display: inline-flex;
     align-items: center;
-    height: auto;
+    min-height: 36px;
     box-sizing: border-box;
     vertical-align: middle;
+    margin: 0;
+  }
     margin: 0;
   }
   .tag-chip.active {
