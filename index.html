@@ -235,18 +235,15 @@
     border: 1.5px solid var(--border); background-color: white;
     cursor: pointer; transition: all 0.15s;
     font-family: 'DM Sans', sans-serif;
-    color: var(--ink-light) !important;
+    color: var(--ink-light);
     flex-shrink: 0;
-    -webkit-appearance: none; appearance: none;
-    -webkit-text-fill-color: var(--ink-light);
-    opacity: 1;
     line-height: 1.5;
     display: inline-flex;
     align-items: center;
     min-height: 36px;
     box-sizing: border-box;
-    vertical-align: middle;
-    margin: 0;
+    user-select: none;
+    -webkit-user-select: none;
   }
     margin: 0;
   }
@@ -1236,7 +1233,7 @@ function renderTagFilter(data) {
   if (allTags.length === 0) { wrap.innerHTML = ''; wrap.style.display = 'none'; return; }
   wrap.style.display = 'flex';
   wrap.innerHTML = allTags.map(t =>
-    `<button class="tag-chip ${activeTagFilter === t ? 'active' : ''}" onclick="toggleTagFilter('${esc(t)}')">${esc(t)}</button>`
+    `<span class="tag-chip ${activeTagFilter === t ? 'active' : ''}" onclick="toggleTagFilter('${esc(t)}')">${esc(t)}</span>`
   ).join('');
 }
 
