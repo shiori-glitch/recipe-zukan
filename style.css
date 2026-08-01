@@ -206,27 +206,24 @@
   .search-bar:focus { border-color: var(--accent); }
 
   .tag-filter-wrap {
-    padding: 14px 16px; display: flex; gap: 8px;
+    padding: 12px 16px; display: flex; gap: 8px;
     overflow-x: auto; scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    align-items: center;
   }
   .tag-filter-wrap::-webkit-scrollbar { display: none; }
   .tag-chip {
-    white-space: nowrap; padding: 6px 14px;
+    white-space: nowrap; padding: 9px 14px;
     border-radius: 20px; font-size: 13px;
-    border: 1.5px solid var(--border); background-color: white;
-    cursor: pointer; transition: all 0.15s;
+    border: 1px solid var(--border); background-color: white;
+    cursor: pointer;
     font-family: 'DM Sans', sans-serif;
     color: var(--ink-light);
     flex-shrink: 0;
     line-height: 1;
-    display: inline-flex;
-    align-items: center;
+    display: inline-block;
     box-sizing: border-box;
     user-select: none;
     -webkit-user-select: none;
-    margin: 2px 0;
   }
   .tag-chip.active {
     background-color: var(--ink); color: white !important;
