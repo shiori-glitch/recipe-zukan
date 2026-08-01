@@ -36,7 +36,7 @@
   .screen {
     display: none;
     flex: 1;
-    overflow-y: auto;
+    /* overflow-y: auto; */
     padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
     -webkit-overflow-scrolling: touch;
   }
@@ -207,7 +207,7 @@
 
   .tag-filter-wrap {
     padding: 2px 16px; display: flex; gap: 8px;
-    overflow-x: visible; scrollbar-width: none;
+    overflow-x: auto; scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
   .tag-filter-wrap::-webkit-scrollbar { display: none; }
