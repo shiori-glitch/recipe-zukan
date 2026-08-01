@@ -206,8 +206,8 @@
   .search-bar:focus { border-color: var(--accent); }
 
   .tag-filter-wrap {
-    padding: 12px 16px; display: flex; gap: 8px;
-    overflow-x: auto; scrollbar-width: none;
+    padding: 2px 16px; display: flex; gap: 8px;
+    overflow-x: visible; scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
   .tag-filter-wrap::-webkit-scrollbar { display: none; }
