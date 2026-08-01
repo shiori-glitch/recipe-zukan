@@ -207,7 +207,7 @@
 
   .tag-filter-wrap {
     padding: 14px 16px; display: flex; gap: 8px;
-    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+    overflow-x: auto; scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     align-items: center;
   }
